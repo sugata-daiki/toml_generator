@@ -1,6 +1,24 @@
 import tomlkit
-from tomlkit import document, table, inline_table, aot, array
+from tomlkit import document, table, inline_table, aot, array, key
 from tomlkit.items import Table
+
+class FilesTable:
+    def __init__(self, doc):
+        doc.add("files", table())
+
+        self.files_table = doc["files"]
+
+
+    def set_output_format(self, fmt):
+        self.files_table[key(["output", "format"])] = fmt
+
+    def set_output_path(self, path):
+        self.files_table[key(["output", "path"])] = path
+
+    def set_output_prefix(self, prefix):
+        self.files_table[key(["output", "prefix"])] = prefix
+
+
 
 class SimulatorTable:
     def __init__(self, doc):
@@ -29,6 +47,9 @@ class SimulatorTable:
 class TOMLGenerator:
     def __init__(self):
         self._doc = document()
+
+    def make_files_table(self):
+        return FilesTable(self._doc)
 
     def make_simulator_table(self):
         return SimulatorTable(self._doc)
