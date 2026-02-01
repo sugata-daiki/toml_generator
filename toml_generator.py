@@ -75,6 +75,25 @@ class ParticleParamsHandler:
 
         self.params_container.append(t)
 
+class HarmonicBondParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_bond(self, idx1, idx2):
+        systems = self._doc["systems"]
+        particles = systems[0]["particles"]
+        residue1 = particles[idx1]["name"]
+        residue2 = particles[idx2]["name"]
+
+        k = 110.4000
+        v0 = 0.5*(constants.PARAM_EXV_SIGMA[residue1] + constants.PARAM_EXV_SIGMA[residue2])
+
+        t = inline_table()
+        t["indices"] = [idx1, idx2]
+        t["k"] = k
+        t["v0"] = v0
+        self.params_container.append(t)
 
 class SystemsTable:
     def __init__(self, doc):
@@ -112,6 +131,51 @@ class SystemsTable:
         params_array = self.current_systems_table["particles"]
         return ParticleParamsHandler(params_array)
 
+class LocalForcefieldTable:
+    def __init__(self, local_aot, doc):
+        self.local_aot = local_aot
+        if len(self.local_aot) == 0:
+            self.local_aot.append(table())
+
+        self.current_local_table = self.local_aot[-1]
+        self._doc = doc
+
+    def make_HarmonicBond(self):
+        self.current_local_table["interaction"] = "BondLength"
+        self.current_local_table["potential"] = "Harmonic"
+        self.current_local_table["topology"] = "bond"
+
+        if "parameters" not in self.current_local_table:
+            parameters_arr = array()
+
+        parameters_arr.multiline(True)
+
+        self.current_local_table.add("parameters", parameters_arr)
+        params_array = self.current_local_table["parameters"]
+        return HarmonicBondParamsHandler(params_array, self._doc)
+        
+class ForcefieldsTable:
+    def __init__(self, doc):
+        # [[forcefields]]
+        if "forcefields" not in doc:
+            doc.add("forcefields", aot())
+
+        self.ff_aot = doc["forcefields"]
+
+        if len(self.ff_aot) == 0:
+            self.ff_aot.append(table())
+
+        self.current_ff_table = self.ff_aot[-1]
+        self._doc = doc
+
+    def make_local_forcefield_table(self):
+        # [[forcefields.local]]
+        if "local" not in self.current_ff_table:
+            self.current_ff_table.add("local", aot())
+        return LocalForcefieldTable(self.current_ff_table["local"], self._doc)
+
+
+
 class TOMLGenerator:
     def __init__(self):
         self._doc = document()
@@ -127,6 +191,9 @@ class TOMLGenerator:
 
     def make_systems_table(self):
         return SystemsTable(self._doc)
+
+    def make_forcefields_table(self):
+        return ForcefieldsTable(self._doc)
 
     def save_toml_file(self, filename):
         with open(filename, "w") as f:
