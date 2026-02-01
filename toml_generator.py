@@ -18,7 +18,23 @@ class FilesTable:
     def set_output_prefix(self, prefix):
         self.files_table[key(["output", "prefix"])] = prefix
 
+class PlatformTable:
+    def __init__(self, doc):
+        doc.add("platform", table())
 
+        self.platform_table = doc["platform"]
+
+    def set_name(self, name):
+        self.platform_table["name"] = name
+
+    def set_precision(self, precision):
+        self.platform_table[key(["properties", "Precision"])] = precision
+
+    def set_deviceIndex(self, deviceIndex):
+        self.platform_table[key(["properties", "DeviceIndex"])] = deviceIndex
+
+    def set_threads(self, threads):
+        self.platform_table[key(["properties", "Threads"])] = threads
 
 class SimulatorTable:
     def __init__(self, doc):
@@ -50,6 +66,9 @@ class TOMLGenerator:
 
     def make_files_table(self):
         return FilesTable(self._doc)
+
+    def make_platform_table(self):
+        return PlatformTable(self._doc)
 
     def make_simulator_table(self):
         return SimulatorTable(self._doc)
