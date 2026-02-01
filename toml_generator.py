@@ -136,6 +136,25 @@ class FlexibleLocalDihedralParamsHandler:
         t["coef"] = coef
         self.params_container.append(t)
 
+class ExcludedVolumeParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_ExcludedVolume_params(self):
+        systems = self._doc["systems"]
+        particles = systems[0]["particles"]
+
+        for i in range(len(particles)):
+            residue = particles[i]["name"]
+
+            radius = 0.5*constants.PARAM_EXV_SIGMA[residue]
+            
+            t = inline_table()
+            t["index"] = i
+            t["radius"] = radius
+            self.params_container.append(t)
+
 class LennardJonesRepulsiveParamsHandler:
     def __init__(self, params_container, doc):
         self.params_container = params_container
@@ -289,6 +308,25 @@ class GlobalForcefieldTable:
     def __init__(self, global_aot, doc):
         self.global_aot = global_aot
         self._doc = doc
+
+    def make_ExcludedVolume(self):
+        t = table()
+        t.add(key(["ignore", "particles_within", "bond"]), 3)
+        t.add(key(["ignore", "particles_within", "contact"]), 1)
+        t.add(key(["ignore", "molecule"]), "Nothing")
+
+        t["interaction"] = "Pair"
+        t["potential"] = "ExcludedVolume"
+        t["epsilon"] = 0.6
+        
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
+
+        self.global_aot.append(t)
+        params_array = t["parameters"]
+
+        return ExcludedVolumeParamsHandler(params_array, self._doc)
 
     def make_LennardJonesRepulsive(self):
         t = table()
