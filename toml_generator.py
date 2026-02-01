@@ -95,6 +95,47 @@ class HarmonicBondParamsHandler:
         t["v0"] = v0
         self.params_container.append(t)
 
+class FlexibleLocalAngleParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_angle(self, idx1, idx2, idx3):
+        systems = self._doc["systems"]
+        particles = systems[0]["particles"]
+        residue2 = particles[idx2]["name"]
+
+        k = constants.FLEXIBLE_LOCAL_ANGLE_CONST
+        y = "y1_" + residue2
+        d2y = "y2_" + residue2
+
+        t = inline_table()
+        t["indices"] = [idx1, idx2, idx3]
+        t["k"] = k
+        t["y"] = y
+        t["d2y"] = d2y
+        self.params_container.append(t)
+
+class FlexibleLocalDihedralParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_dihedral_angle(self, idx1, idx2, idx3, idx4):
+        systems = self._doc["systems"]
+        particles = systems[0]["particles"]
+        residue2 = particles[idx2]["name"]
+        residue3 = particles[idx3]["name"]
+
+        k = constants.FLEXIBLE_LOCAL_DIHEDRAL_CONST
+        coef = residue2 + "-" + residue3
+
+        t = inline_table()
+        t["indices"] = [idx1, idx2, idx3, idx4]
+        t["k"] = k
+        t["coef"] = coef
+        self.params_container.append(t)
+
 class LennardJonesRepulsiveParamsHandler:
     def __init__(self, params_container, doc):
         self.params_container = params_container
@@ -210,9 +251,39 @@ class LocalForcefieldTable:
         t.add("parameters", params)
 
 
-        self.global_aot.append(t)
+        self.local_aot.append(t)
         params_array = t["parameters"]
         return HarmonicBondParamsHandler(params_array, self._doc)
+
+    def make_FlexibleLocalAngle(self):
+        t = table()
+
+        t["interaction"] = "BondAngle"
+        t["potential"] = "FlexibleLocalAngle"
+        t["topology"] = "none"
+
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
+
+        self.local_aot.append(t)
+        params_array = t["parameters"]
+        return FlexibleLocalAngleParamsHandler(params_array, self._doc)
+
+    def make_FlexibleLocalDihedral(self):
+        t = table()
+
+        t["interaction"] = "DihedralAngle"
+        t["potential"] = "FlexibleLocalDihedral"
+        t["topology"] = "none"
+
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
+
+        self.local_aot.append(t)
+        params_array = t["parameters"]
+        return FlexibleLocalDihedralParamsHandler(params_array, self._doc)
 
 class GlobalForcefieldTable:
     def __init__(self, global_aot, doc):
