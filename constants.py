@@ -101,6 +101,29 @@ LJA_EPSILON = {
     "VAL": 0.41850068525598694,
 }
 
+DH_CHARGE = {
+    "ALA": 0.0,
+    "ARG": 1.0,
+    "ASN": 0.0,
+    "ASP": -1.0,
+    "CYS": 0.0,
+    "GLN": 0.0,
+    "GLU": -1.0,
+    "GLY": 0.0,
+    "HIS": 0.0,
+    "ILE": 0.0,
+    "LEU": 0.0,
+    "LYS": 1.0,
+    "MET": 0.0,
+    "PHE": 0.0,
+    "PRO": 0.0,
+    "SER": 0.0,
+    "THR": 0.0,
+    "TRP": 0.0,
+    "TYR": 0.0,
+    "VAL": 0.0,
+}
+
 NM2ANGSTROM = 10.0
 KJPERKCAL = 4.1868
 CAFETIME = math.sqrt(1.0 / KJPERKCAL) * 0.1 # ps/cafe-time

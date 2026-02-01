@@ -23,4 +23,7 @@ lj_attr.add_LennardJonesAttractive_params()
 lj_rep = global_ff.make_LennardJonesRepulsive()
 lj_rep.add_LennardJonesRepulsive_params()
 
+dh = global_ff.make_DebyeHuckel()
+dh.add_DebyeHuckel_params()
+
 toml.save_toml_file('input.toml')

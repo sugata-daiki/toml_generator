@@ -138,6 +138,24 @@ class LennardJonesAttractiveParamsHandler:
             t["sigma"] = sigma
             self.params_container.append(t)
 
+class DebyeHuckelParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_DebyeHuckel_params(self):
+        systems = self._doc["systems"]
+        particles = systems[0]["particles"]
+
+        for i in range(len(particles)):
+            residue = particles[i]["name"]
+
+            charge = constants.DH_CHARGE[residue]
+
+            t = inline_table()
+            t["index"] = i
+            t["charge"] = charge
+            self.params_container.append(t)
 
 class SystemsTable:
     def __init__(self, doc):
@@ -178,24 +196,22 @@ class SystemsTable:
 class LocalForcefieldTable:
     def __init__(self, local_aot, doc):
         self.local_aot = local_aot
-        if len(self.local_aot) == 0:
-            self.local_aot.append(table())
-
-        self.current_local_table = self.local_aot[-1]
         self._doc = doc
 
     def make_HarmonicBond(self):
-        self.current_local_table["interaction"] = "BondLength"
-        self.current_local_table["potential"] = "Harmonic"
-        self.current_local_table["topology"] = "bond"
+        t = table()
 
-        if "parameters" not in self.current_local_table:
-            parameters_arr = array()
+        t["interaction"] = "BondLength"
+        t["potential"] = "Harmonic"
+        t["topology"] = "bond"
+        
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
 
-        parameters_arr.multiline(True)
 
-        self.current_local_table.add("parameters", parameters_arr)
-        params_array = self.current_local_table["parameters"]
+        self.global_aot.append(t)
+        params_array = t["parameters"]
         return HarmonicBondParamsHandler(params_array, self._doc)
 
 class GlobalForcefieldTable:
@@ -236,6 +252,21 @@ class GlobalForcefieldTable:
         params_array = t["parameters"]
 
         return LennardJonesAttractiveParamsHandler(params_array, self._doc)
+
+    def make_DebyeHuckel(self):
+        t = table()
+        t.add(key(["ignore", "particles_within", "bond"]), 1)
+        t["interaction"] = "Pair"
+        t["potential"] = "DebyeHuckel"
+        
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
+
+        self.global_aot.append(t)
+        params_array = t["parameters"]
+
+        return DebyeHuckelParamsHandler(params_array, self._doc)
 
 class ForcefieldsTable:
     def __init__(self, doc):
