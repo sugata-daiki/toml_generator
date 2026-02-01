@@ -86,7 +86,7 @@ class HarmonicBondParamsHandler:
         residue1 = particles[idx1]["name"]
         residue2 = particles[idx2]["name"]
 
-        k = 110.4000
+        k = constants.BOND_CONST
         v0 = 0.5*(constants.PARAM_EXV_SIGMA[residue1] + constants.PARAM_EXV_SIGMA[residue2])
 
         t = inline_table()
@@ -94,6 +94,50 @@ class HarmonicBondParamsHandler:
         t["k"] = k
         t["v0"] = v0
         self.params_container.append(t)
+
+class LennardJonesRepulsiveParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_LennardJonesRepulsive_params(self):
+        systems = self._doc["systems"]
+        particles = systems[0]["particles"]
+        
+        for i in range(len(particles)):
+            residue = particles[i]["name"]
+
+            epsilon = constants.LJR_EPSILON
+            sigma = constants.HPS_SIGMA[residue]
+
+            t = inline_table()
+            t["index"] = i
+            t["epsilon"] = epsilon
+            t["sigma"] = sigma
+            self.params_container.append(t)
+
+
+class LennardJonesAttractiveParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_LennardJonesAttractive_params(self):
+        systems = self._doc["systems"]
+        particles = systems[0]["particles"]
+        
+        for i in range(len(particles)):
+            residue = particles[i]["name"]
+
+            epsilon = constants.LJR_EPSILON*constants.LJA_EPSILON[residue]
+            sigma = constants.HPS_SIGMA[residue]
+
+            t = inline_table()
+            t["index"] = i
+            t["epsilon"] = epsilon
+            t["sigma"] = sigma
+            self.params_container.append(t)
+
 
 class SystemsTable:
     def __init__(self, doc):
@@ -153,7 +197,46 @@ class LocalForcefieldTable:
         self.current_local_table.add("parameters", parameters_arr)
         params_array = self.current_local_table["parameters"]
         return HarmonicBondParamsHandler(params_array, self._doc)
+
+class GlobalForcefieldTable:
+    def __init__(self, global_aot, doc):
+        self.global_aot = global_aot
+        self._doc = doc
+
+    def make_LennardJonesRepulsive(self):
+        t = table()
+        t.add(key(["ignore", "particles_within", "bond"]), 1)
+
+        t["interaction"] = "Pair"
+        t["potetial"] = "LennardJonesRepulsive"
+        t["cutoff"] = 6.19
+
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
         
+        self.global_aot.append(t)
+        params_array = t["parameters"]
+
+        return LennardJonesRepulsiveParamsHandler(params_array, self._doc)
+
+    def make_LennardJonesAttractive(self):
+        t = table()
+        t.add(key(["ignore", "particles_within", "bond"]), 1)
+
+        t["interaction"] = "Pair"
+        t["potetial"] = "LennardJonesRepulsive"
+        t["cutoff"] = 6.19
+
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
+        
+        self.global_aot.append(t)
+        params_array = t["parameters"]
+
+        return LennardJonesAttractiveParamsHandler(params_array, self._doc)
+
 class ForcefieldsTable:
     def __init__(self, doc):
         # [[forcefields]]
@@ -173,6 +256,12 @@ class ForcefieldsTable:
         if "local" not in self.current_ff_table:
             self.current_ff_table.add("local", aot())
         return LocalForcefieldTable(self.current_ff_table["local"], self._doc)
+    
+    def make_global_forcefield_table(self):
+        # [[forcefields.global]]
+        if "global" not in self.current_ff_table:
+            self.current_ff_table.add("global", aot())
+        return GlobalForcefieldTable(self.current_ff_table["global"], self._doc)
 
 
 
