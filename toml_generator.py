@@ -1,6 +1,7 @@
 import tomlkit
 from tomlkit import document, table, inline_table, aot, array, key
 from tomlkit.items import Table
+import constants
 
 class FilesTable:
     def __init__(self, doc):
@@ -60,6 +61,57 @@ class SimulatorTable:
     def set_energy_minimization(self, energy_minimization):
         self.simulator_table["energy_minimization"] = energy_minimization
 
+class ParticleParamsHandler:
+    def __init__(self, params_container):
+        self.params_container = params_container
+
+    def add_particle(self, coord, residue_name, group):
+        t = inline_table()
+
+        t["m"] = constants.ATOM_MASS[residue_name]
+        t["pos"] = [coord[0], coord[1], coord[2]]
+        t["name"] = residue_name
+        t["group"] = group
+
+        self.params_container.append(t)
+
+
+class SystemsTable:
+    def __init__(self, doc):
+        # [[systems]]
+        if "systems" not in doc:
+            doc.add("systems", aot())
+
+        self.systems_aot = doc["systems"]
+
+        if len(self.systems_aot) == 0:
+            self.systems_aot.append(table())
+
+        self.current_systems_table = self.systems_aot[-1]
+    
+    def set_boundary_shape_lower(self, coord):
+        self.current_systems_table[key(["boundary_shape", "lower"])] = [coord[0], coord[1], coord[2]]
+
+    def set_boundary_shape_upper(self, coord):
+        self.current_systems_table[key(["boundary_shape", "upper"])] = [coord[0], coord[1], coord[2]]
+
+    def set_ionic_strength(self, ionic_strength):
+        self.current_systems_table[key(["attributes", "ionic_strength"])] = ionic_strength
+
+    def set_temperature(self, temperature):
+        self.current_systems_table[key(["attributes", "temperature"])] = temperature
+
+    def make_particles_table(self):
+        
+        if "particles" not in self.current_systems_table:
+            particles_arr = array()
+
+        particles_arr.multiline(True)
+
+        self.current_systems_table.add("particles", particles_arr)
+        params_array = self.current_systems_table["particles"]
+        return ParticleParamsHandler(params_array)
+
 class TOMLGenerator:
     def __init__(self):
         self._doc = document()
@@ -72,6 +124,9 @@ class TOMLGenerator:
 
     def make_simulator_table(self):
         return SimulatorTable(self._doc)
+
+    def make_systems_table(self):
+        return SystemsTable(self._doc)
 
     def save_toml_file(self, filename):
         with open(filename, "w") as f:
