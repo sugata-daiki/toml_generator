@@ -95,6 +95,19 @@ class HarmonicBondParamsHandler:
         t["v0"] = v0
         self.params_container.append(t)
 
+class HarmonicAngleParamsHandler:
+    def __init__(self, params_container, doc):
+        self.params_container = params_container
+        self._doc = doc
+
+    def add_angle(self, idx1, idx2, idx3):
+        k = 1.0 # to-do: fix it
+        v0 = 3.142 # to-do: fix it
+        t["indices"] = [idx1, idx2, idx3]
+        t["k"] = k
+        t["v0"] = v0
+        self.params_container.append(t)
+
 class FlexibleLocalAngleParamsHandler:
     def __init__(self, params_container, doc):
         self.params_container = params_container
@@ -273,6 +286,21 @@ class LocalForcefieldTable:
         self.local_aot.append(t)
         params_array = t["parameters"]
         return HarmonicBondParamsHandler(params_array, self._doc)
+
+    def make_HarmonicAngle(self):
+        t = table()
+
+        t["interaction"] = "BondAngle"
+        potential = "Harmonic"
+        topology = "angle"
+
+        params = array()
+        params.multiline(True)
+        t.add("parameters", params)
+
+        self.local_aot.append(t)
+        params_array = t["parameters"]
+        return HarmonicAngleParamsHandler(params_array, self._doc)
 
     def make_FlexibleLocalAngle(self):
         t = table()
